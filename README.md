@@ -49,7 +49,6 @@ the output file name will formated like this
 ## log levels
 the default log levels are:
 
-<table>
 | Level | Tag | Description |
 | --- | --- | --- |
 | 0 | debug | Designates fine-grained informational events that are most useful to debug an application.|
