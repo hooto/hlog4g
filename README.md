@@ -9,17 +9,17 @@ create a new test file main.go, and input the following codes
 package main
 
 import (
-    "github.com/hooto/hlog4g"
+    "github.com/hooto/hlog4g/hlog"
 )
 
 func main() {
 
     // API:Print
-    hlog4g.Print("info", "started")
-    hlog4g.Print("error", "the error code/message: ", 400, "/", "bad request")
+    hlog.Print("info", "started")
+    hlog.Print("error", "the error code/message: ", 400, "/", "bad request")
 
     // API::Printf
-    hlog4g.Printf("error", "the error code/message: %d/%s", 400, "bad request")
+    hlog.Printf("error", "the error code/message: %d/%s", 400, "bad request")
 
     select {}
 }
@@ -60,7 +60,7 @@ the default log levels are:
 
 You can also define your custom levels:
 ```go
-hlog4g.LevelConfig([]string{"warn", "error", "fatal"})
+hlog.LevelConfig([]string{"warn", "error", "fatal"})
 ```
 
 ## Setting Flags
@@ -80,5 +80,8 @@ The following flags are most commonly used:
 | minloglevel | int, default=1(which is INFO) | Log messages at or above this level. Again, the numbers of severity levels DEBUG, INFO, WARN, ERROR, and FATAL are 0, 1, 2, 3, and 4, respectively.|
 | logtolevels | bool, default=false | If output messages to multi leveled logfiles from minloglevel to the max; or output messages to the minloglevel logfile.|
 
+
+## Licensing
+Licensed under the Apache License, Version 2.0
 
 
