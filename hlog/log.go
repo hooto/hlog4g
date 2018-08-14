@@ -82,7 +82,7 @@ func init() {
 					*logToStderr = true
 				}
 
-			case "minLogLevel":
+			case "minloglevel":
 				if v, err := strconv.Atoi(val); err == nil {
 					*minLogLevel = v
 				}
@@ -104,7 +104,7 @@ func LogDirSet(path string) {
 
 func args_parse(i int) (string, string, bool) {
 
-	key := strings.TrimLeft(os.Args[i], "-")
+	key := strings.ToLower(strings.TrimLeft(os.Args[i], "-"))
 
 	if si := strings.Index(key, "="); si > 0 {
 
