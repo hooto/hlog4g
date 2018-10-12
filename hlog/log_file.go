@@ -109,6 +109,10 @@ func (w *logFileWriter) Close() {
 	w.nbytes = 0
 }
 
+func (w *logFileWriter) Sync() error {
+	return w.fp.Sync()
+}
+
 func fileOpenInit(tag string) (*os.File, error) {
 
 	flocker.Lock()

@@ -243,6 +243,35 @@ func Printf(level, format string, a ...interface{}) {
 	newEntry(printFormat, level, format, a...)
 }
 
+func Flush() error {
+
+	locker.Lock()
+	defer locker.Unlock()
+
+	var e error
+
+	for {
+
+		if len(bufs) > 0 {
+			time.Sleep(10e6)
+			continue
+		}
+
+		for _, ws := range log_ws {
+			if err := ws.Sync(); err != nil {
+				if e == nil {
+					e = err
+				}
+			}
+		}
+
+		time.Sleep(10e6)
+		break
+	}
+
+	return e
+}
+
 func outputAction() {
 
 	go func() {
