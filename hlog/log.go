@@ -25,6 +25,12 @@ import (
 	"time"
 )
 
+const (
+	Version            = "0.9.1"
+	printDefault uint8 = iota
+	printFormat
+)
+
 var (
 	locker    sync.Mutex
 	levels    = []string{"DEBUG", "INFO", "WARN", "ERROR", "FATAL"}
@@ -40,11 +46,6 @@ var (
 	minLogLevel = flag.Int("minloglevel", 1, "Messages logged at a lower level than this"+
 		" don't actually get logged anywhere")
 	logToLevels = flag.Bool("logtolevels", false, "Write log to multi level files")
-)
-
-const (
-	printDefault uint8 = iota
-	printFormat
 )
 
 type entry struct {
