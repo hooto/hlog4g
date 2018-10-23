@@ -14,14 +14,7 @@
 
 package hlog
 
-import (
-	"flag"
-)
-
 func main() {
-
-	// init output dir
-	flag.Parse()
 
 	// API:Print
 	Print("error", "the error code/message: ", 400, "/", "bad request")
