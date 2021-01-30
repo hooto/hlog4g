@@ -81,7 +81,7 @@ func ExpStPrint(name string, status string) {
 				logMsg += fmt.Sprintf(", %s %d %5.2f%%", v.status, v.count, float64(100*v.count)/float64(n))
 				v.count = 0
 			}
-			newEntry(printDefault, "info", "", logMsg)
+			newEntry(time.Now(), printDefault, "info", "", logMsg)
 		}
 		item.timeOffset = tn
 	}

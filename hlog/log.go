@@ -40,6 +40,8 @@ var (
 	bufs      = make(chan *entry, 100000)
 	onceCmd   sync.Once
 	log_ws    = map[int]*logFileWriter{}
+	slots     = map[string]*slotEntry{}
+	slotmu    sync.RWMutex
 
 	// If non-empty, write log files in this directory
 	logDir = ""
@@ -59,6 +61,11 @@ type entry struct {
 	lineNumber int
 	ltime      time.Time
 	args       []interface{}
+}
+
+type slotEntry struct {
+	ttl  time.Time // time to log
+	args []interface{}
 }
 
 func init() {
@@ -156,11 +163,11 @@ func (e *entry) line() string {
 	return logLine + "\n"
 }
 
-func newEntry(ptype uint8, level_tag, format string, a ...interface{}) {
+func newEntry(logTime time.Time, ptype uint8, levelTag, format string, a ...interface{}) {
 
-	level_tag = strings.ToUpper(level_tag)
+	levelTag = strings.ToUpper(levelTag)
 
-	level, ok := levelMap[level_tag]
+	level, ok := levelMap[levelTag]
 	if !ok || level < minLogLevel {
 		return
 	}
@@ -187,16 +194,76 @@ func newEntry(ptype uint8, level_tag, format string, a ...interface{}) {
 		fileName:   fileName,
 		lineNumber: lineNumber,
 		args:       a,
-		ltime:      time.Now(),
+		ltime:      logTime,
 	}
 }
 
 func Print(level string, a ...interface{}) {
-	newEntry(printDefault, level, "", a...)
+	newEntry(time.Now(), printDefault, level, "", a...)
 }
 
 func Printf(level, format string, a ...interface{}) {
-	newEntry(printFormat, level, format, a...)
+	newEntry(time.Now(), printFormat, level, format, a...)
+}
+
+func slotTime(tn time.Time, sec int64) time.Time {
+	if sec < 1 {
+		sec = 1
+	} else if sec > 3600 {
+		sec = 3600
+	}
+	fix := int64(tn.Second())
+	if sec > 60 {
+		fix += int64(tn.Minute() * 60)
+	}
+	if fix = fix % sec; fix > 0 {
+		tn = tn.Add(time.Second * time.Duration(sec-fix))
+	}
+	return time.Unix(tn.Unix(), 0)
+}
+
+func SlotPrint(sec int64, levelTag, format string, a ...interface{}) {
+	levelTag = strings.ToUpper(levelTag)
+	level, ok := levelMap[levelTag]
+	if !ok || level < minLogLevel {
+		return
+	}
+
+	tn := time.Now()
+
+	slotmu.Lock()
+	defer slotmu.Unlock()
+	const limit = 1000
+	if len(slots) >= limit {
+		rkeys := []string{}
+		for k, _ := range slots {
+			rkeys = append(rkeys, k)
+			if len(rkeys) >= limit/2 {
+				break
+			}
+		}
+		newEntry(time.Now(), printFormat, "warn", "hlog slots auto clean with format (%s), last %d/%d",
+			format, len(rkeys), len(slots))
+		for _, k := range rkeys {
+			delete(slots, k)
+		}
+	}
+	p, ok := slots[format]
+	if !ok {
+		p = &slotEntry{
+			ttl:  slotTime(tn, sec),
+			args: a,
+		}
+		slots[format] = p
+	} else if tn.Unix() > p.ttl.Unix() {
+		newEntry(p.ttl, printFormat, levelTag, format, p.args...)
+		slots[format] = &slotEntry{
+			ttl:  slotTime(tn, sec),
+			args: a,
+		}
+	} else {
+		p.args = a
+	}
 }
 
 func Flush() error {
@@ -239,7 +306,7 @@ func outputAction() {
 
 			if len(logDir) > 0 {
 
-				for level_tag, level := range levelOut {
+				for levelTag, level := range levelOut {
 
 					if logEntry.level < level {
 						continue
@@ -249,7 +316,7 @@ func outputAction() {
 					wr, _ := log_ws[level]
 
 					if wr == nil {
-						wr = newLogFileWriter(level_tag)
+						wr = newLogFileWriter(levelTag)
 						log_ws[level] = wr
 					}
 

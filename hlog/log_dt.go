@@ -91,7 +91,7 @@ func ExpDtPrint(name string, dur int64) {
 				logMsg += fmt.Sprintf(", ~%dms %d %5.2f%%", v.dur, v.count, float64(100*v.count)/float64(n))
 				v.count = 0
 			}
-			newEntry(printDefault, "info", "", logMsg)
+			newEntry(time.Now(), printDefault, "info", "", logMsg)
 		}
 		item.timeOffset = tn
 	}
