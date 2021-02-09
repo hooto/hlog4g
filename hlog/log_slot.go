@@ -58,17 +58,34 @@ func SlotPrint(sec int64, levelTag, format string, a ...interface{}) {
 
 	slotmu.Lock()
 	defer slotmu.Unlock()
+
+	if p, ok := slots[format]; !ok {
+		p = &slotEntry{
+			ttl:  slotTime(tn, sec),
+			args: a,
+		}
+		slots[format] = p
+	} else if tn.Unix() > p.ttl.Unix() {
+		newEntry(p.ttl, printFormat, levelTag, format, p.args...)
+		slots[format] = &slotEntry{
+			ttl:  slotTime(tn, sec),
+			args: a,
+		}
+	} else {
+		p.args = a
+	}
+
 	const limit = 1000
 	if (slott + 60) < tn.Unix() {
 		rkeys := []string{}
 		for k, v := range slots {
-			if tn.Unix() < v.ttl.Unix() {
+			if tn.Unix() <= v.ttl.Unix() {
 				continue
 			}
 			rkeys = append(rkeys, k)
 		}
 		if len(rkeys) > 0 {
-			newEntry(time.Now(), printFormat, "warn", "hlog slots auto clean %d/%d",
+			newEntry(time.Now(), printFormat, "warn", "hlog slots auto clean %d/%d (#1)",
 				len(rkeys), len(slots))
 			for _, k := range rkeys {
 				delete(slots, k)
@@ -87,23 +104,7 @@ func SlotPrint(sec int64, levelTag, format string, a ...interface{}) {
 		for _, k := range rkeys {
 			delete(slots, k)
 		}
-		newEntry(time.Now(), printFormat, "warn", "hlog slots auto clean %d/%d",
+		newEntry(time.Now(), printFormat, "warn", "hlog slots auto clean %d/%d (#2)",
 			len(rkeys), len(slots))
-	}
-	p, ok := slots[format]
-	if !ok {
-		p = &slotEntry{
-			ttl:  slotTime(tn, sec),
-			args: a,
-		}
-		slots[format] = p
-	} else if tn.Unix() > p.ttl.Unix() {
-		newEntry(p.ttl, printFormat, levelTag, format, p.args...)
-		slots[format] = &slotEntry{
-			ttl:  slotTime(tn, sec),
-			args: a,
-		}
-	} else {
-		p.args = a
 	}
 }
