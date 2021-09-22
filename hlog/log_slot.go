@@ -85,7 +85,7 @@ func SlotPrint(sec int64, levelTag, format string, a ...interface{}) {
 			rkeys = append(rkeys, k)
 		}
 		if len(rkeys) > 0 {
-			newEntry(time.Now(), printFormat, "warn", "hlog slots auto clean %d/%d (#1)",
+			newEntry(time.Now(), printFormat, "debug", "hlog slots auto clean %d/%d (#1)",
 				len(rkeys), len(slots))
 			for _, k := range rkeys {
 				delete(slots, k)
@@ -104,7 +104,7 @@ func SlotPrint(sec int64, levelTag, format string, a ...interface{}) {
 		for _, k := range rkeys {
 			delete(slots, k)
 		}
-		newEntry(time.Now(), printFormat, "warn", "hlog slots auto clean %d/%d (#2)",
+		newEntry(time.Now(), printFormat, "debug", "hlog slots auto clean %d/%d (#2)",
 			len(rkeys), len(slots))
 	}
 }
