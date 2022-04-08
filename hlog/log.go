@@ -26,9 +26,10 @@ import (
 )
 
 const (
-	Version            = "0.9.2"
+	Version            = "0.9.3"
 	printDefault uint8 = iota
 	printFormat
+	maxBufferSize = 10000
 )
 
 var (
@@ -37,7 +38,7 @@ var (
 	levelChar = "DIWEF"
 	levelMap  = map[string]int{}
 	levelOut  = map[string]int{}
-	bufs      = make(chan *entry, 100000)
+	bufs      = make(chan *entry, maxBufferSize+1000)
 	onceCmd   sync.Once
 	log_ws    = map[int]*logFileWriter{}
 
@@ -158,6 +159,10 @@ func (e *entry) line() string {
 
 func newEntry(logTime time.Time, ptype uint8, levelTag, format string, a ...interface{}) {
 
+	if len(bufs) >= maxBufferSize {
+		return
+	}
+
 	levelTag = strings.ToUpper(levelTag)
 
 	level, ok := levelMap[levelTag]
@@ -229,7 +234,12 @@ func outputAction() {
 
 	go func() {
 
-		for logEntry := range bufs {
+		flush := func() {
+
+			logEntry, ok := <-bufs
+			if !ok {
+				return
+			}
 
 			bs := []byte(logEntry.line())
 
@@ -258,6 +268,10 @@ func outputAction() {
 					wr.Write(bs)
 				}
 			}
+		}
+
+		for {
+			flush()
 		}
 	}()
 }
