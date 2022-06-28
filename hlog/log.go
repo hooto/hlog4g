@@ -73,7 +73,7 @@ func init() {
 	}
 
 	if v, ok := hflag.ValueOK("minloglevel"); ok {
-		minLogLevel = v.Int()
+		minLogLevel = int(v.Int64())
 	}
 
 	if hflag.Value("logtolevels").String() == "true" {
